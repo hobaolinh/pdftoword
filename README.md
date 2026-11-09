@@ -29,6 +29,29 @@
 
    Có thể dùng `Chay-ung-dung.ps1` nếu PowerShell cho phép chạy tập lệnh. Nếu cổng 80 đang được dùng, chạy `app.py --port 8766` hoặc `Khoi-dong-PDF-sang-Word.cmd --port 8766`, rồi mở `http://127.0.0.1:8766/`.
 
+## Chạy thử trên GitHub Codespaces
+
+Mở terminal Bash trong thư mục chứa `app.py`. Tệp `.cmd` dùng cho Windows. Các lệnh dưới đây dùng trên Ubuntu hoặc Debian trong Codespaces, với Python 3.11 trở lên.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y python3-venv tesseract-ocr tesseract-ocr-vie tesseract-ocr-eng
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+tesseract --list-langs
+```
+
+Kiểm tra danh sách có `vie` và `eng`. Sau đó khởi động ứng dụng.
+
+```bash
+python app.py --codespaces --port 8000
+```
+
+Trong tab **Ports** (Cổng), chuyển tiếp cổng **8000** nếu chưa thấy, giữ chế độ **Private** rồi chọn **Open in Browser**. Giữ terminal chạy trong lúc dùng ứng dụng. Xem [hướng dẫn chuyển tiếp cổng của GitHub](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace).
+
+PDF được xử lý trong máy ảo trên hạ tầng GitHub khi dùng Codespaces. Dùng các PDF mẫu trong `mau/` để chạy thử.
+
 ## Sử dụng và đối chiếu
 
 1. Chọn hoặc kéo thả một PDF tối đa **100 MB**, **900 trang**.

@@ -1,4 +1,4 @@
-"""Loopback-only Flask service. Uploaded data and conversion results live in RAM."""
+"""Flask service with a loopback listener. Conversion results live in RAM."""
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -9,6 +9,7 @@ from threading import RLock, Thread
 from time import monotonic, sleep
 import argparse
 import logging
+import os
 import re
 import secrets
 from urllib.parse import unquote
@@ -148,11 +149,17 @@ def find_job(key):
 
 @app.before_request
 def local_only():
-    if not LOOPBACK.fullmatch(request.host):
+    forwarded_host = app.config.get("CODESPACES_HOST")
+    local_host = LOOPBACK.fullmatch(request.host)
+    if not local_host and request.host != forwarded_host:
         abort(403)
     origin = request.headers.get("Origin")
-    if origin and origin != f"http://{request.host}":
-        abort(403)
+    if origin:
+        allowed_origins = {f"http://{request.host}"} if local_host else set()
+        if forwarded_host:
+            allowed_origins.add(f"https://{forwarded_host}")
+        if origin not in allowed_origins:
+            abort(403)
     if request.method == "POST" and request.headers.get("X-Local-Converter") != "1":
         abort(403)
     sweep()
@@ -293,7 +300,17 @@ def local_server(port):
 def main():
     parser = argparse.ArgumentParser(description="PDF sang Word chạy trên máy này")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    parser.add_argument("--codespaces", action="store_true",
+                        help="Cho phép địa chỉ chuyển tiếp riêng của GitHub Codespaces")
     args = parser.parse_args()
+    if args.codespaces:
+        if not 1 <= args.port <= 65535:
+            parser.error("--codespaces cần một cổng cố định trong khoảng 1–65535.")
+        name = os.environ.get("CODESPACE_NAME")
+        domain = os.environ.get("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")
+        if os.environ.get("CODESPACES") != "true" or not name or not domain:
+            parser.error("--codespaces cần chạy trong GitHub Codespaces.")
+        app.config["CODESPACES_HOST"] = f"{name}-{args.port}.{domain}"
     server, url = local_server(args.port)
     print(f"PDF sang Word: {url}", flush=True)
     server.run()
