@@ -242,7 +242,7 @@ async function showPage() {
     const model = await json(url);
     if (sequence !== previewSequence) return;
     byId("page-mode").textContent = model.mode;
-    const original = paperFor("original", model);
+    const original = paperFor("original", model.source_size || model);
     const rebuilt = paperFor("rebuild", model);
     const source = node("img", "original-img");
     source.src = url + "/original";
@@ -275,7 +275,8 @@ async function showPage() {
       if (warning.box) {
         for (const parent of [original, rebuilt]) {
           const mark = node("div", warning.code === "low" ? "mark low" : "mark");
-          place(mark, warning.box);
+          const scale = parent === rebuilt ? (model.word_scale || 1) : 1;
+          place(mark, warning.box.map(value => value * scale));
           mark.setAttribute("aria-hidden", "true");
           parent.append(mark);
         }

@@ -21,6 +21,8 @@ VML = "urn:schemas-microsoft-com:vml"
 OFFICE = "urn:schemas-microsoft-com:office:office"
 PAGE_NUMBER = re.compile(r"^(?:(Trang|Page)\s+)?(\d+)$", re.I)
 LIST_MARKER = re.compile(r"^\s*([•◦▪‣]|\d+[.)])\s+")
+MIN_PAGE_PT = 36
+MAX_PAGE_PT = 1584
 
 
 def element(tag, attrs=None):
@@ -423,6 +425,49 @@ def add_scan_page(doc, section, page):
                         block.get("label", "Ảnh từ PDF"), block.get("preserved_ink", False))
 
 
+def fit_word_page(page):
+    width, height = page["width"], page["height"]
+    if MIN_PAGE_PT <= min(width, height) and max(width, height) <= MAX_PAGE_PT:
+        return
+
+    # Preserve the aspect ratio. Add space only if the short edge still falls
+    # below the minimum after the long edge has reached the maximum.
+    scale = min(max(1, MIN_PAGE_PT / min(width, height)), MAX_PAGE_PT / max(width, height))
+    scaled_width, scaled_height = width * scale, height * scale
+    padded = min(scaled_width, scaled_height) < MIN_PAGE_PT - 1e-6
+    page["source_size"] = {"width": width, "height": height}
+    page["word_scale"] = scale
+    page["width"] = min(MAX_PAGE_PT, max(MIN_PAGE_PT, scaled_width))
+    page["height"] = min(MAX_PAGE_PT, max(MIN_PAGE_PT, scaled_height))
+    page["flow_scan"] = False
+
+    def scaled(values):
+        return tuple(value * scale for value in values)
+
+    page["margins"] = scaled(page["margins"])
+    for block in page["items"]:
+        block["box"] = scaled(block["box"])
+        lines = block.get("lines", [])
+        if block["kind"] == "table":
+            block["xs"], block["ys"] = scaled(block["xs"]), scaled(block["ys"])
+            for cell in block["cells"]:
+                cell["box"] = scaled(cell["box"])
+                cell["weight"] *= scale
+                lines.extend(cell["lines"])
+        for line in lines:
+            line["box"] = scaled(line["box"])
+            for span in line["spans"]:
+                span["box"] = scaled(span["box"])
+                span["baseline"] *= scale
+                span["size"] *= scale
+
+    message = (f"Kích thước trang và nội dung trong Word bằng {scale:.3%} kích thước PDF gốc "
+               "để vừa khổ giấy Word.") if scale != 1 else ""
+    if padded:
+        message += " Đã thêm khoảng trắng ở cạnh ngắn để vừa khổ giấy Word."
+    page["warnings"].insert(0, {"code": "word-page-size", "text": message.strip(), "box": None})
+
+
 def export_word(pages):
     doc = Document()
     doc.core_properties.title = "Bản chuyển đổi PDF"
@@ -432,6 +477,7 @@ def export_word(pages):
     normal.font.size = Pt(10)
     shape_id = 0
     for index, page in enumerate(pages):
+        fit_word_page(page)
         section = doc.sections[0] if index == 0 else doc.add_section(WD_SECTION_START.NEW_PAGE)
         if index:
             blank(doc.paragraphs[-1])

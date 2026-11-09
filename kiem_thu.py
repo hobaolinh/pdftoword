@@ -79,6 +79,49 @@ def inspect_docx(data, pages, expected_text, name):
                 "pictures":len(pictures)}
 
 
+def check_word_page_sizes(base):
+    with pymupdf.open(DIR / "01-van-ban.pdf") as sample, pymupdf.open() as document:
+        source = sample[0].rect
+        large = document.new_page(width=source.width * 3, height=source.height * 3)
+        large.show_pdf_page(large.rect, sample, 0)
+        small = document.new_page(width=24, height=30)
+        small.insert_text((2, 12), "Small", fontsize=6)
+        narrow = document.new_page(width=2400, height=30)
+        narrow.insert_text((10, 12), "Wide", fontsize=9)
+        document.insert_pdf(sample, from_page=0, to_page=0)
+        data = document.tobytes()
+    path = "/api/jobs/" + submit(base, data, "khac-kho.pdf", "vie+eng")["id"]
+    state = wait(base, path)
+    assert state["state"] == "ready" and state["complete"] == 4, state
+    models = [call(base, f"{path}/pages/{i}") for i in range(4)]
+    for model in models[:3]:
+        assert model["warnings"][0]["code"] == "word-page-size"
+    assert models[3].get("source_size") is None
+    assert max(models[0]["width"], models[0]["height"]) == 1584
+    assert abs(models[0]["width"] / models[0]["height"] - source.width / source.height) < 1e-6
+    assert (models[1]["width"], models[1]["height"]) == (36, 45)
+    assert (models[2]["width"], models[2]["height"]) == (1584, 36)
+    assert abs(models[0]["source_size"]["width"] - source.width * 3) < .001
+    assert abs(models[0]["source_size"]["height"] - source.height * 3) < .001
+    original_table = next(item for item in models[3]["items"] if item["kind"] == "table")
+    scaled_table = next(item for item in models[0]["items"] if item["kind"] == "table")
+    for actual, original in zip(scaled_table["box"], original_table["box"]):
+        assert abs(actual - original * 3 * models[0]["word_scale"]) < .05
+    result = call(base, path + "/download", b"", {"X-Local-Converter":"1"})
+    with ZipFile(BytesIO(result)) as archive:
+        root = etree.fromstring(archive.read("word/document.xml"))
+    sizes = root.xpath("//w:pgSz", namespaces=NS)
+    assert len(sizes) == 4
+    for size, model in zip(sizes, models):
+        for attribute, dimension in (("w", "width"), ("h", "height")):
+            assert int(size.get(f"{{{NS['w']}}}{attribute}")) == round(model[dimension] * 20)
+    assert root.xpath("//w:t[text()='Small']", namespaces=NS)
+    assert root.xpath("//w:t[text()='Wide']", namespaces=NS)
+    assert len(root.xpath("//w:tbl", namespaces=NS)) >= 2
+    assert len(root.xpath("//wp:anchor", namespaces=NS)) >= 2
+    print("PASS: oversized, small, narrow and standard pages in one editable DOCX")
+
+
 def main():
     args = ArgumentParser()
     args.add_argument("--url", default="http://127.0.0.1")
@@ -129,6 +172,7 @@ def main():
     assert any(w["code"] == "empty" for w in call(base, empty_path + "/pages/0")["warnings"])
     call(base, empty_path + "/download", b"", {"X-Local-Converter":"1"})
     print("PASS: invalid, size limit, password, no text, download cleanup")
+    check_word_page_sizes(base)
 
 
 if __name__ == "__main__":

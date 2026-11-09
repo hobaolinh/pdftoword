@@ -103,8 +103,8 @@ def convert(key, job, content):
                 job.total = total
             preview_size = 820 if total > 100 else 1200
             for i, page in enumerate(document):
-                if not (36 <= page.rect.width <= 1584 and 36 <= page.rect.height <= 1584):
-                    raise ConversionError(f"Trang {i+1} có kích thước ngoài phạm vi Word hỗ trợ (0,5–22 inch).")
+                if page.rect.is_empty or page.rect.is_infinite:
+                    raise ConversionError(f"Trang {i+1} có kích thước không hợp lệ.")
                 with lock:
                     job.current = i + 1
                 image, _, _ = raster(page, page.rect, min(2, preview_size / max(page.rect.width, page.rect.height)))
