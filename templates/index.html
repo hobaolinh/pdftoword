@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chuyển PDF thành Word có thể chỉnh sửa ngay trên máy của bạn.">
+  <title>PDF sang Word | Studio tài liệu</title>
+  <link rel="icon" href="{{ url_for('static', filename='mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+  <header class="site-head">
+    <div class="shell nav">
+      <a class="brand" href="/"><img alt="" src="{{ url_for('static', filename='mark.svg') }}">Studio tài liệu</a>
+      <nav class="nav-actions" aria-label="Điều hướng">
+        <a class="about-link" href="#gioi-thieu">Giới thiệu</a>
+        <span class="local"><span></span> OCR sẵn sàng · Việt + Anh</span>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><i></i> CÔNG CỤ CHUYỂN ĐỔI TÀI LIỆU</span>
+        <h1>PDF sang Word<span>.</span></h1>
+        <p>Chuyển PDF văn bản, bản scan hoặc tài liệu hỗn hợp thành tệp Word có thể chỉnh sửa.</p>
+      </div>
+      <svg class="hero-art" viewBox="0 0 350 200" fill="none" aria-hidden="true">
+        <defs>
+          <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#8caaf3" opacity=".24"/></pattern>
+          <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#d6e2ff"/></linearGradient>
+        </defs>
+        <rect x="17" y="15" width="320" height="169" rx="17" fill="url(#dots)"/>
+        <path d="M4 130h330M27 66h320" stroke="#7393d9" stroke-opacity=".13"/>
+        <g transform="translate(55 43) rotate(-9 47 63)">
+          <path d="M4 5h62l26 26v91a8 8 0 0 1-8 8H12a8 8 0 0 1-8-8Z" fill="#183366" stroke="#6485d2"/>
+          <path d="M65 5v26h27" fill="#36558f" stroke="#6485d2"/>
+          <path d="M20 56h55m-55 12h48m-48 12h31" stroke="#7f9bd6" stroke-width="2" stroke-linecap="round"/>
+          <rect x="20" y="96" width="34" height="19" rx="4" fill="#3d5486"/>
+          <text x="27" y="109" fill="#e5edff" font-family="Arial" font-size="9" font-weight="700" letter-spacing="1">PDF</text>
+        </g>
+        <path d="M147 111h43" stroke="#88adff" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 6"/>
+        <path d="m187 104 8 7-8 7" stroke="#a9c1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(204 29) rotate(8 53 67)">
+          <path d="M4 6h68l26 26v99a8 8 0 0 1-8 8H12a8 8 0 0 1-8-8Z" fill="url(#paper)"/>
+          <path d="M71 6v26h27" fill="#abc1fb"/>
+          <path d="M21 56h59m-59 11h52m-52 11h35" stroke="#8ca6e4" stroke-width="2" stroke-linecap="round"/>
+          <rect x="21" y="91" width="58" height="26" rx="2" stroke="#7695df"/>
+          <path d="M21 103h58m-37-12v26m18-26v26" stroke="#7695df"/>
+          <rect x="74" y="110" width="36" height="35" rx="8" fill="#4a75ef"/>
+          <text x="82" y="134" fill="white" font-family="Arial" font-size="21" font-weight="700">W</text>
+        </g>
+        <path d="M293 30h14m-7-7v14M41 154h11m-5.5-5.5v11" stroke="#87a8fb" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </section>
+
+    <ol class="steps" aria-label="Các bước chuyển đổi">
+      <li class="active" aria-current="step"><span class="step-number">01</span><span><strong>Chọn PDF</strong><small>Tải tệp lên</small></span></li>
+      <li><span class="step-number">02</span><span><strong>Chuyển đổi</strong><small>Đọc chữ và dựng bố cục</small></span></li>
+      <li><span class="step-number">03</span><span><strong>Tải Word</strong><small>Đối chiếu và tải .docx</small></span></li>
+    </ol>
+
+    <section class="workspace" aria-labelledby="work-title">
+      <div class="workspace-main">
+        <div class="section-kicker">TỆP NGUỒN</div>
+        <h2 id="work-title">Chọn tệp PDF</h2>
+        <p class="muted">Dùng tệp có văn bản, bản scan hoặc kết hợp cả hai.</p>
+        <input id="file" type="file" accept=".pdf,application/pdf" hidden>
+        <button class="drop" id="drop" type="button" data-max-file-mb="{{ max_file_mb }}">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>
+          <strong>Kéo thả PDF vào đây</strong>
+          <span>hoặc <b>chọn tệp từ máy</b></span>
+          <small>1 tệp PDF · Tối đa {{ max_file_mb }} MB · {{ max_pages }} trang</small>
+        </button>
+        <div class="filename" id="filename" hidden><span></span><button type="button" id="remove" aria-label="Bỏ tệp PDF">×</button></div>
+        <div class="error" id="error" role="alert" hidden></div>
+        <div class="progress" id="progress" hidden>
+          <div><strong id="progress-label" role="status"></strong><span id="progress-value"></span></div>
+          <progress id="progress-bar" aria-label="Tiến độ xử lý"></progress>
+        </div>
+      </div>
+      <aside class="options" aria-labelledby="options-title">
+        <div class="section-kicker">THIẾT LẬP</div>
+        <h2 id="options-title">Ngôn ngữ OCR</h2>
+        <p class="muted">Áp dụng cho chữ trong ảnh và trang scan.</p>
+        <fieldset class="choices">
+          <legend class="sr-only">Chọn ngôn ngữ nhận dạng</legend>
+          <label><input type="radio" name="lang" value="vie" checked><span>Tiếng Việt</span></label>
+          <label><input type="radio" name="lang" value="vie+eng"><span>Tiếng Việt + Tiếng Anh</span></label>
+          <label><input type="radio" name="lang" value="eng"><span>Tiếng Anh</span></label>
+        </fieldset>
+        <button class="primary" id="convert" type="button" disabled>Chuyển đổi sang Word <span aria-hidden="true">→</span></button>
+      </aside>
+    </section>
+
+    <section class="review" id="review" aria-labelledby="review-title" hidden>
+      <div class="review-head">
+        <div><div class="section-kicker">ĐỐI CHIẾU</div><h2 id="review-title">Xem trước theo trang</h2></div>
+        <div class="review-actions">
+          <span class="expiry" id="expiry" hidden>Tự hủy sau <strong id="expiry-time" role="timer" aria-live="off"></strong></span>
+          <button class="primary" type="button" id="download">Tải tệp Word <span aria-hidden="true">↓</span></button>
+          <button class="primary secondary" type="button" id="cancel" aria-label="Hủy phiên chuyển đổi">Hủy</button>
+        </div>
+      </div>
+      <p class="muted">Bản dựng trên trình duyệt dùng cùng dữ liệu với tệp Word. Cách hiển thị phông chữ và ngắt dòng có thể khác trong Word. Kết quả lưu trong 15 phút và được dọn sau khi tải.</p>
+      <div class="review-controls">
+        <label>Trang <select id="page-select"></select></label>
+        <span class="tag" id="page-mode"></span>
+        <label class="toggle"><input id="show-marks" type="checkbox" checked> Hiện vùng cần kiểm tra</label>
+      </div>
+      <div class="review-panes">
+        <figure><figcaption>PDF gốc</figcaption><div class="paper-frame" id="original"></div></figure>
+        <figure><figcaption>Bản dựng Word</figcaption><div class="paper-frame" id="rebuild"></div></figure>
+      </div>
+      <ul id="warnings" class="warnings" aria-label="Chi tiết cần kiểm tra"></ul>
+    </section>
+    <div class="notice" id="notice" role="status" hidden></div>
+
+    <div class="privacy">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v5c0 5-3.6 8.7-8 11-4.4-2.3-8-6-8-11V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      <span><strong>Dữ liệu ở lại trên máy.</strong> Tệp và nội dung OCR được xử lý cục bộ.</span>
+    </div>
+    <section class="about" id="gioi-thieu" aria-labelledby="about-title">
+      <div class="section-kicker">GIỚI THIỆU</div>
+      <h2 id="about-title">Quyền tác giả</h2>
+      <p><strong>LINHHB · Trung tâm Công nghệ · VikkiBank</strong><br><time datetime="2026-03">Tháng 03/2026</time></p>
+      <p>Quyền thiết kế và sở hữu ứng dụng được bảo lưu.</p>
+      <p>© 2026</p>
+    </section>
+  </main>
+  <footer><div class="shell">© 2026 LINHHB · Trung tâm Công nghệ · VikkiBank. Bảo lưu quyền thiết kế và sở hữu ứng dụng.</div></footer>
+</body>
+</html>
